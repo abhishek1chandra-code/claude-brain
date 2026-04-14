@@ -2,7 +2,7 @@
 ## Status: ACTIVE
 ## Phase: UI-UNIFICATION + CSS-MASTER
 ## Repo: abhishek1chandra-code/claude-brain
-## Last checkpoint: Checkpoint-31 (April 14, 2026 — A2 S2)
+## Last checkpoint: Checkpoint-31 (April 14, 2026 — A2 S2) [files from checkpoint zip]
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 
 ---
@@ -27,7 +27,7 @@ DCR.CMIS.sln
 
 ---
 
-## COMPLETED (as of Checkpoint-30)
+## COMPLETED (as of Checkpoint-31 + A3 S3)
 
 ### Backend (ALL DONE — DO NOT TOUCH)
 - [x] All domain entities + enums (AllEnums.cs, AppUser, Complaint, all related entities)
@@ -46,7 +46,7 @@ DCR.CMIS.sln
 - [x] API project: AdminComplaintController, DashboardController, UserManagementController, DepartmentController, ShiftController, WorkEventController, ReportController, IvrsConfigController, AuditLogController, FieldController, LanguageController
 
 ### Web / Razor Pages (DONE)
-- [x] Public/Index.cshtml — Citizen portal SPA (94KB, works but bloated — NEEDS REFACTOR)
+- [x] Public/Index.cshtml — AUDIT COMPLETE (A3 S3): No inline <style>, @section Scripts is minimal (server-data only), Layout="_Layout" ✓, all JS in public.js ✓
 - [x] Public/Account: Login, OfficialLogin, Register, Logout, MyComplaints, Profile, ChangePassword, Preferences
 - [x] Public/Register: Mobile, VerifyOtp, Success
 - [x] Public/ComplaintForm, Confirmation, EditComplaint, Track, Survey
@@ -63,43 +63,37 @@ DCR.CMIS.sln
 - [x] Layouts: AdminLayout, CrLayout, MagistrateLayout, OfficerLayout, PoliceLayout
 - [x] Shared: PaginationBar, DistrictMap (Leaflet)
 
-### CSS (COMPLETED A1 S1 — CSS File Created)
-- [x] dcr-cmis.css — UNIFIED master CSS (replaces all below)
-  - Dark theme (default): :root / html[data-theme="dark"]
-  - Light theme: html[data-theme="light"] + legacy body.light-mode
-  - Sections: tokens, orbs, app shell, sidebar (grid+fixed variants), topbar, theme toggle, content, page header, glass components, stat cards, filter pills, tables, badges, buttons, forms, modals, alerts, charts, pagination, citizen portal, admin-specific, Blazor overrides, notice board, situation report, utilities, responsive, print
+### CSS (COMPLETE)
+- [x] dcr-cmis.css — UNIFIED master CSS (1513 lines, in rotation kit + /tmp/brain/)
 - [x] theme-toggle.js — localStorage + OS preference + tab-sync + Blazor re-render support
+- [x] All Blazor layouts migrated (A1 S1 + A2 S2)
+- [x] All _Layout.cshtml files migrated (A1 S1)
+- [x] App.razor migrated (A1 S1)
+
+### CSS Migration — Standalone Pages (COMPLETE A3 S3)
+- [x] Public/Account/Login.cshtml: glass-theme.css → dcr-cmis.css; html.light-mode → html[data-theme="light"]; inline script updated to setAttribute('data-theme',...)
+- [x] Official/Index.cshtml: glass-theme.css → dcr-cmis.css (JS already used data-theme correctly — no further changes)
+- [x] No other glass-theme.css / admin.css refs found anywhere (grep confirmed)
 
 ---
-
-### CSS Migration (COMPLETED — A2 S2)
-- [x] CrLayout.razor: glass-theme.css + admin.css → dcr-cmis.css
-- [x] MagistrateLayout.razor: glass-theme.css + admin.css → dcr-cmis.css; removed C# ToggleTheme/_dark; replaced with data-theme-toggle button
-- [x] OfficerLayout.razor: glass-theme.css + admin.css → dcr-cmis.css
-- [x] PoliceLayout.razor: glass-theme.css + admin.css → dcr-cmis.css
-- [x] AdminLayout.razor: already using dcr-cmis.css (done A1 S1)
-- [x] App.razor: already using dcr-cmis.css + theme-toggle.js (done A1 S1)
-- [x] All Razor _Layout.cshtml files: already using dcr-cmis.css (done A1 S1)
-- [x] NavMenu.razor.css: kept (Blazor ::deep scoped selectors, uses CSS vars — no migration needed)
-- [x] MainLayout.razor.css: kept (structural only, uses CSS vars — no migration needed)
-- [x] Rotation kit dcr-cmis.css synced from project (1513 lines)
-- NOTE: No old CSS files remained to delete (clean state from A1 S1)
 
 ## IN PROGRESS — NONE
 
 ---
 
 ## NEXT SESSION
-**Public/Index.cshtml refactor** — file is ~677 lines (prev. noted as 94KB bloated):
-- Audit for remaining inline <style> blocks and move to dcr-cmis.css
-- Audit for inline <script> and move to public.js
-- Ensure Layout = "_Layout" is set (already confirmed)
-- Verify SPA tab behavior (Login/Register/Track tabs) works correctly
-- Then: Review all Blazor pages for any remaining glass-theme.css / admin.css inline references
+**public.js cleanup + remaining Public account pages audit:**
+- public.js: Remove dead `toggleTheme()` function (uses old body.classList approach — Index page now uses data-theme-toggle attribute + theme-toggle.js). Replace with no-op or remove entirely.
+- public.js: Remove dead IIFE at bottom: `(function(){ if(localStorage.getItem('dcr-theme')==='light') document.body.classList.add('light-mode'); })();`
+- Audit remaining Public/Account pages (OfficialLogin, Register, Logout, MyComplaints, Profile, ChangePassword, Preferences) for any glass-theme.css / admin.css / html.light-mode refs
+- Audit Public/ComplaintForm, Confirmation, EditComplaint, Track, Survey for same
+- After all above: declare CSS UNIFICATION COMPLETE, update Phase to NEXT_PHASE (TBD from ARCHITECT-BLUEPRINT)
 
 ---
 
 ## DECISIONS LOG
+- 2026-04-14 A3 S3: Login.cshtml + Official/Index.cshtml: glass-theme.css → dcr-cmis.css. Login.cshtml: html.light-mode → html[data-theme="light"] across all inline CSS selectors. Theme init script updated: classList.add('light-mode') → setAttribute('data-theme','light'/'dark'). Official/Index.cshtml JS was already correct (data-theme). Grep confirmed zero remaining glass-theme/admin.css refs in .razor/.cshtml files.
+- 2026-04-14 A3 S3: Public/Index.cshtml AUDITED — already fully clean. No inline <style>, minimal @section Scripts (server JSON vars + C# conditionals only), Layout="_Layout" set, all JS functions in public.js. No action needed.
 - 2026-04-14 A2 S2: CSS Migration COMPLETE. All Blazor layouts now use dcr-cmis.css. MagistrateLayout: removed C# theme state, now uses data-theme-toggle (JS-driven). NavMenu.razor.css + MainLayout.razor.css kept as Blazor scoped CSS (they use CSS vars, no migration needed).
 - 2026-04-14 A2 S2: Rotation kit dcr-cmis.css synced from project (1513 lines = project master).
 - 2026-04-14 A1 S1: KEEP old project, do NOT rebuild. Backend 90%+ complete.
