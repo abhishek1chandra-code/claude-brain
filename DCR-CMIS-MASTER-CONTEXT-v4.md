@@ -65,9 +65,9 @@ At ~70% context: STOP feature work. Package + present_files + push. Nothing else
 # PART 1 — SESSION STATE (PROJECT BRAIN)
 
 ## Status: ACTIVE
-## Phase: OFFICER PORTAL COMPLETE → ADMIN PORTAL NEXT
+## Phase: BUILD WARNINGS CLEAN → ADMIN PORTAL NEXT
 ## Repo: abhishek1chandra-code/claude-brain
-## Last Checkpoint: A4S4-FINAL (April 15, 2026)
+## Last Checkpoint: A6S1 (April 15, 2026)
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 
 ---
@@ -108,6 +108,7 @@ DCR.CMIS.sln
 - [x] Public/Register: Mobile, VerifyOtp, Success
 - [x] Public/ComplaintForm, Confirmation, EditComplaint, Track, Survey
 - [x] ControlRoom/Index.cshtml + _Layout.cshtml (IVRS operator view)
+- [x] ControlRoom/Index.cshtml.cs — MockIvrsCalls removed; real IvrsCallLog query via AppDbContext (A5S1)
 - [x] Field/GpsReport.cshtml
 - [x] Admin/Complaints/Import.cshtml
 
@@ -184,10 +185,10 @@ DCR.CMIS.sln
 **Warning:** `CurrentPage` member uses `new` keyword unnecessarily (does not hide accessible member)
 - **Fix:** Remove the `new` keyword from `CurrentPage` property declaration in both files
 
-#### 6. Blazor Pages — Warning CS0168 (unused `ex` variable)
-**Files:** OfficerDashboard.razor.cs (line 57), Admin/LocalBodies.razor.cs (line 41), Admin/PoliceStations.razor.cs (line 37), Admin/RevenueVillages.razor.cs (line 38)
-**Warning:** Variable `ex` declared but never used in catch blocks
-- **Fix:** Either use `ex` (e.g., log it) or change `catch (Exception ex)` to `catch (Exception)` (discard)
+#### 6. Blazor Pages — Warning CS0168 ✅ FIXED (A6S1)
+**Files:** OfficerDashboard.razor.cs, LocalBodies.razor.cs, PoliceStations.razor.cs, RevenueVillages.razor.cs
+**Root cause:** `{{ex.Message}}` in `$""` strings = double-brace escape → literal text, ex unused
+**Fix applied:** Changed `{{ex.Message}}` → `{ex.Message}` (proper interpolation, ex now used)
 
 ### AFTER BUILD IS FIXED — NEXT TASKS (in order):
 1. Public/Index.cshtml refactor:
