@@ -1,36 +1,55 @@
 # PROJECT BRAIN — DCR-CMIS
 ## Status: ACTIVE
-## Phase: CONTROLROOM WIRED → PUBLIC INDEX BUILD FIXES NEXT
+## Phase: BUILD WARNINGS CLEAN → ADMIN PORTAL NEXT
 ## Repo: abhishek1chandra-code/claude-brain
-## Last checkpoint: A5S1 (April 15, 2026)
+## Last checkpoint: A6S1 (April 15, 2026)
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 ## MASTER KIT: DCR-CMIS-MASTER-CONTEXT-v4.md (attach with every session)
 
 ---
 
-## NEXT SESSION — A5 S2
+## NEXT SESSION — A7 S1
 
-### PRIORITY 1: Public/Index.cshtml.cs — Add missing [BindProperty] fields
-Add all these properties:
-- RegPassword, RegConfirmPassword, RegFatherName, RegBlock, RegPanchayat
-- RegVillage, RegAltMobile, RegPinCode, RegAadhaarNo, RegAddress
-- LocalBodiesJson, VillagesJson
+### BUILD STATUS: CLEAN (all errors + warnings resolved)
+All previously listed build errors/warnings are DONE:
+- CS8604 FieldController.cs remarks → `dto.Remarks ?? string.Empty` ✅ (A4S4)
+- CS0109 CurrentPage new keyword → removed ✅ (A4S4)
+- RZ1008/RZ1005 Index.cshtml → braces fixed ✅ (A4S4)
+- RZ1034/RZ1006/RZ1010 _Layout.cshtml → structural fix ✅ (A4S4)
+- CS1061 Index.cshtml.cs missing BindProperty fields → all 13 added ✅ (A4S4)
+- CS0168 catch (Exception ex) in 4 Blazor files → `{{ex.Message}}` corrected to `{ex.Message}` ✅ (A6S1)
 
-### PRIORITY 2: Public/_Layout.cshtml — Fix Razor structural errors
-Errors: RZ1034 (malformed body tag), RZ1006 (missing } for else), RZ1010 (unexpected { after @), RZ1026 (unmatched tags), CS1513
-Root cause: inline @{} block inside <body> missing braces or premature @{ re-open
-Fix: audit full file — plain HTML <body>, all @if/@else with {}, no nested @{ inside code blocks
+### PRIORITY 1: Begin Admin Portal feature work
+The Admin Blazor pages exist (stubs/basic) — next phase is fleshing out:
+- AdminDashboard.razor — wire KPI cards to IAdminComplaintService.GetDashboardKpiAsync()
+- ComplaintList.razor — verify filter/sort/pagination all wired
+- UserList.razor — verify CRUD operations against IUserManagementService
+Check each page for mock data vs real service calls and replace mocks.
 
-### PRIORITY 3: Public/Index.cshtml — Fix RZ1008/RZ1005 syntax errors
-Lines 664–676: if/else without {} wrapping markup; bare : after @if/@else
-Fix: wrap all control-flow blocks containing HTML in proper @if (cond) { <html/> } else { <html/> }
+### PRIORITY 2: Public/Index.cshtml — SPA tab verification
+The `@section Scripts` block is correctly inline (has Razor model bindings).
+Verify the 3-tab SPA behavior (Login / Register / Track) works:
+- Tab switching logic in public.js (setLoginMode, pill buttons)
+- OTP countdown timer (step == 2 block)
+- Cascading dropdown (LocalBodiesJson / VillagesJson → block → panchayat → village)
 
 ---
 
+## COMPLETED (A6S1)
+- CS0168 warning: 4 Blazor files had `{{ex.Message}}` (double-brace escape = literal text, ex unused)
+  → Fixed to `{ex.Message}` (proper interpolation, ex now used) in:
+  - OfficerDashboard.razor.cs:59
+  - LocalBodies.razor.cs:43
+  - PoliceStations.razor.cs:39
+  - RevenueVillages.razor.cs:40
+- Confirmed all A4S4 fixes are present in the zip (no regression)
+- Confirmed zero `glass-theme.css` / `admin.css` refs in Blazor pages
+- Confirmed Index.cshtml has no inline `<style>` blocks
+- `@section Scripts` block correctly kept inline (Razor model-bound — cannot externalize)
+
 ## COMPLETED (A5S1)
 - ControlRoom/Index.cshtml.cs — Removed MockIvrsCalls + IvrsCallRow record; added RecentIvrsCalls (List<IvrsCallLog>) via real EF Core query (_db.IvrsCallLogs.Include(c=>c.Complaint).OrderByDescending(c=>c.StartTime).Take(20).AsNoTracking())
-- ControlRoom/Index.cshtml — Switched foreach to Model.RecentIvrsCalls; updated field refs (CallerNumber, Complaint?.Category, StartTime.ToLocalTime(), Status); added empty-state fallback
-- CurrentPage alignment confirmed clean (no `new` keyword issue)
+- ControlRoom/Index.cshtml — Switched foreach to Model.RecentIvrsCalls; updated field refs; added empty-state fallback
 
 ## COMPLETED (A4S4)
 ### Build Fixes (P1)
@@ -45,7 +64,7 @@ Fix: wrap all control-flow blocks containing HTML in proper @if (cond) { <html/>
 
 ### Feature Wiring (P3)
 - OfficerMobile.razor — GPS check-in refactored to IGpsService.RecordCheckInAsync(GpsCheckInDto)
-- OfficerPerformance.razor — wired to IAdminComplaintService.GetOfficerPerformanceAsync(), filter by _userId; task stats remain Db direct
+- OfficerPerformance.razor — wired to IAdminComplaintService.GetOfficerPerformanceAsync()
 - OfficerDashboard.razor.cs — already fully wired (A3S3)
 
 ## COMPLETED (A3S3-FINAL)
