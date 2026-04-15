@@ -1,77 +1,87 @@
 # PROJECT BRAIN — DCR-CMIS
 ## Status: ACTIVE
-## Phase: ADMIN PORTAL AUDIT — A12S1 COMPLETE
+## Phase: ADMIN PORTAL AUDIT — A13S1 COMPLETE
 ## Repo: abhishek1chandra-code/claude-brain
-## Last checkpoint: A12S1 (April 15, 2026)
+## Last checkpoint: A13S1 (April 15, 2026)
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 ## MASTER KIT: DCR-CMIS-MASTER-CONTEXT-v4.md (attach with every session)
 
 ---
 
-## NEXT SESSION — A13S1
+## NEXT SESSION — A14S1
 
-### BUILD STATUS: CLEAN (all 8 A12S1 fixes are syntactically valid)
-Build-blocking error RZ10008 in IvrsCallLog.razor resolved.
+### BUILD STATUS: CLEAN
+### DB STATUS: HOTFIX REQUIRED — run A13S1-DB-HOTFIX.sql before next dev cycle
 
-### COMPLETED IN A12S1 — 8 fixes across 7 files
+### COMPLETED IN A13S1 — 3 fixes across 2 files + 1 SQL hotfix
 
 | # | File | Bug | Fix |
 |---|------|-----|-----|
-| 1 | IvrsCallLog.razor | BUILD ERROR RZ10008: duplicate `oninput` — `@bind:event="oninput"` + `@oninput="ResetPage"` | Changed to `@bind:after="ResetPage"` |
-| 2 | AdminBroadcast.razor | Missing `@rendermode InteractiveServer` — Send button dead | Added rendermode directive |
-| 3 | EscalationRequests.razor | Missing `@rendermode InteractiveServer` — Approve/Reject buttons dead | Added rendermode directive |
-| 4 | WorkEvents.razor.cs | `HandleExcelImportAsync` was a stub — stream discarded, ExcelImportSvc never called | Full pipeline: MemoryStream → StartJobAsync → ProcessJobAsync → GetJobAsync → LoadEvents |
-| 5 | DepartmentList.razor | Stale CSS: `page-header`, `page-subtitle`, `btn-primary` | Migrated to `ph mb-20`, `ph-sub`, `btn-cta` |
-| 6 | Reports.razor | Emoji ⭐ in survey table (×5 columns + header) + Bootstrap card tokens | Removed emoji; migrated to `glass-card`, `table-header`, `p-16` |
-| 7 | WorkEvents.razor | Modal titles doubled: "Edit Edit Event/Magistrate/Officer" | Removed duplicate "Edit " prefix from all 3 modal headers |
-| 8 | ShiftSwapRequests.razor | `badge-yellow` (non-existent token) | Replaced with `badge-amber` |
+| SQL | A13S1-DB-HOTFIX.sql | `notice_boards.expires_at` missing (migration used wrong table name `notice_board`); `app_users.address` + 7 other columns missing (migration ran against `asp_net_users`); 20260414000001_FixAppUsersColumns in wrong namespace never applied | ALTER TABLE with IF NOT EXISTS + __EFMigrationsHistory inserts |
+| 1 | OfficerLoad.razor | `badge-danger` is not a canonical CSS token (non-existent) | Changed to `badge-red` |
+| 2 | OfficerPerformance.razor | `GroupBy(t => new { t.OfficerId, t.Officer!.UserName })` — navigation property in GroupBy key is not reliably translatable by EF Core; throws `InvalidOperationException` at runtime | Two-step: GroupBy on scalar `t.OfficerId`, then separate `Users` lookup + `ToDictionaryAsync` join in memory. Added try/catch guard. |
 
-### CLEAN — NO CHANGES NEEDED (A12S1 audit)
-- AuditLog.razor + .cs ✅ — rendermode, layout, IAuditLogService fully wired
-- OtpSettings.razor ✅ — ISystemConfigService, save/load correct
-- SystemConfig.razor ✅ — OTP toggles + GIS settings wired
-- NotificationLog.razor ✅ — EF query, pagination correct
-- DutyAttendance.razor ✅ — IHttpClientFactory, CSV export via JSRuntime
-- ShiftHandoverLog.razor ✅ — IShiftService, handover summary wired
+### CARRY-FORWARD VERIFIED CLEAN (A13S1)
+- **Public/Index.cshtml.cs** — `OnPostTrackAsync` carry-forward resolved: page uses `OnGetAsync(?no=)` for tracking. No `OnPostTrackAsync` needed. All 5 handlers (SendOtp, VerifyOtp, PasswordLogin, Register, LoadNotices) are correct. `LoadNoticesAsync()` has catch→mock fallback so DB errors don't crash UI (explains 200 responses in log despite `expires_at` error). ✅
+- **Track.cshtml.cs** — `OnGetAsync` + `OnPostRequestEscalationAsync` correct. IDOR guard on escalation (BUG-114). Auth guard on PII search (BUG-110). ✅
+- **P0 Security blockers** — ALL RESOLVED IN CODEBASE:
+  - JWT: `appsettings.json` has `REPLACE_VIA_ENV` placeholder; `Program.cs` throws `InvalidOperationException` if key contains "REPLACE" — production-safe ✅
+  - CORS: explicit `WithOrigins(origins)` from config — no wildcard ✅
+  - Password: RequireDigit, RequiredLength=12, RequireNonAlphanumeric, RequireUppercase, RequireLowercase, RequiredUniqueChars=4 — both API and Web Program.cs ✅
 
-### PRIORITY 1 — A13S1: Public Portal + Sub-reports + Security
-1. **Public/Index.cshtml Track tab** — Verify `OnPostTrackAsync()` handler exists and is correct (A8S1 carry-forward)
-2. **`_Reports/OfficerLoad.razor`** and **`_Reports/OfficerPerformance.razor`** — not yet audited
-3. **P0 Security blockers:** JWT placeholder, CORS wildcard, weak password policy — production-blocking
+### DB ROOT CAUSE (for reference)
+- Migration `20260413300000_AppUser_Extended_NoticeExpiry`:
+  - Ran `ALTER TABLE asp_net_users` — wrong (EF maps AppUser → `app_users`)
+  - Ran `ALTER TABLE notice_board ADD COLUMN IF NOT EXISTS expires_at` — wrong (singular, EF expects `notice_boards`)
+  - Both silently no-oped due to IF NOT EXISTS
+- Migration `20260414000001_FixAppUsersColumns`:
+  - Correct SQL (targets `app_users`) but placed in `Infrastructure/Migrations/` (wrong folder)
+  - Should be in `Infrastructure/Data/Migrations/` — EF never picked it up
+- Migration `20260414000002_CreateNoticeBoardAndBeatReport`:
+  - Creates orphan `notice_board` (singular) + `notice_board_attachment` (singular) tables
+  - EF never queries these — they're dead tables. Do not drop without checking for data.
 
-### PRIORITY 2 — A13S1: Systemic emoji cleanup
-- DutyAttendance stat cards: 👥 ✅ ⚠️ ❌ 📍 📊 all need SVG replacement
-- EscalationRequests status icons in table
-- NotificationLog empty state (📭)
-- All AdminBroadcast emoji references (none in markup, but status strings had ✅ / ❌ — check runtime strings too)
+### PRIORITY 1 — A14S1: Remaining emoji audit
+- DutyAttendance.razor: stat cards use 👥 ✅ ⚠️ ❌ 📍 📊 — replace with SVG icons
+- EscalationRequests.razor: status icons in table
+- NotificationLog.razor: empty state (📭)
+
+### PRIORITY 2 — A14S1: IComplaintRepository interface
+- Track.cshtml.cs uses `IComplaintRepository.GetByComplaintNumberAsync()` — verify this interface and its implementation exist and return `ComplaintDetailDto` correctly (not yet audited)
 
 ---
+
+## COMPLETED (A12S1) — 8 fixes across 7 files
+| # | File | Bug |
+|---|------|-----|
+| 1 | IvrsCallLog.razor | BUILD ERROR RZ10008: duplicate `oninput` — `@bind:event="oninput"` + `@oninput="ResetPage"` → Changed to `@bind:after="ResetPage"` |
+| 2 | AdminBroadcast.razor | Missing `@rendermode InteractiveServer` |
+| 3 | EscalationRequests.razor | Missing `@rendermode InteractiveServer` |
+| 4 | WorkEvents.razor.cs | `HandleExcelImportAsync` was a stub |
+| 5 | DepartmentList.razor | Stale CSS: `page-header`, `page-subtitle`, `btn-primary` |
+| 6 | Reports.razor | Emoji ⭐ + Bootstrap card tokens |
+| 7 | WorkEvents.razor | Modal titles doubled: "Edit Edit Event/Magistrate/Officer" |
+| 8 | ShiftSwapRequests.razor | `badge-yellow` (non-existent) → `badge-amber` |
 
 ## COMPLETED (A11S1) — 10 fixes across 7 files
 | # | File | Bug |
 |---|------|-----|
-| 1 | IvrsConfig.razor.cs | Infinite spinner on failure — no _error field |
-| 2 | IvrsConfig.razor | No error UI; emoji 🔢 in DTMF header |
+| 1 | IvrsConfig.razor.cs | Infinite spinner on failure |
+| 2 | IvrsConfig.razor | No error UI; emoji 🔢 |
 | 3 | LocalBodies.razor | Missing @rendermode |
 | 4 | LocalBodies.razor.cs | AllBlocks missing RatniFardipur |
 | 5 | PoliceStations.razor | Missing @rendermode |
 | 6 | PoliceStations.razor.cs | AllBlocks missing RatniFardipur |
-| 7 | RevenueVillages.razor | Stale CSS: page-header, field-input, btn-primary |
+| 7 | RevenueVillages.razor | Stale CSS |
 | 8 | RevenueVillages.razor.cs | AllBlocks missing RatniFardipur |
 | 9 | ShiftList.razor.cs | HandleExcelImportAsync stub |
 | 10 | GpsCheckInHistory.razor | Missing @rendermode + @layout |
 
-## COMPLETED (A7S1)
+## COMPLETED (A7S1–A5S1–A6S1–A4S4)
 - Full audit: AdminDashboard, ComplaintList, UserList, OfficialApproval
-- LocalBodiesJson / VillagesJson in Index.cshtml.cs — LoadNoticesAsync() from DB
-
-## COMPLETED (A6S1)
-- CS0168 warning: 4 Blazor files had `{{ex.Message}}` → `{ex.Message}`
-
-## COMPLETED (A5S1)
+- LocalBodiesJson / VillagesJson in Index.cshtml.cs
 - ControlRoom/Index.cshtml.cs — real EF replacing MockIvrsCalls
-
-## COMPLETED (A4S4)
+- CS0168 warning: 4 Blazor files fixed
 - All build errors and warnings resolved
 
 ## DO NOT CHANGE
@@ -85,3 +95,5 @@ Backend (Domain/Application/Infrastructure/API), EF migrations, JWT/OTP auth, Co
 - All admin pages MUST have `@layout AdminLayout`
 - `@bind:event="oninput"` owns the oninput slot — use `@bind:after="Method"` never `@oninput="Method"` alongside it
 - Excel import stubs: audit every HandleExcelImport* method for actual ExcelImportSvc calls
+- EF GroupBy: never use navigation properties in GroupBy key — use scalar FKs + separate dictionary lookup
+- EF migrations: ALL migrations must live in `Infrastructure/Data/Migrations/` folder, namespace `DCR.CMIS.Infrastructure.Data.Migrations`
