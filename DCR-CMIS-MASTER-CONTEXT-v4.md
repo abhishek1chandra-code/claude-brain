@@ -5,6 +5,63 @@
 
 ---
 
+---
+
+# PART 0 — SESSION OUTPUT CONTRACT (ENFORCED)
+
+> **Claude: Read this before anything else. Violating these rules = failed session.**
+
+## MANDATORY END-OF-SESSION CHECKLIST
+Before writing any handoff text, Claude MUST call `present_files` for ALL of these:
+
+1. ✅ **Project ZIP** — `DCR-CMIS-CHECKPOINT-A[N]S[N].zip` (repackaged from `/tmp/checkpoint/`)
+2. ✅ **Master Context MD** — `DCR-CMIS-MASTER-CONTEXT-v4.md` (updated with session changes)
+
+**These are NON-NEGOTIABLE outputs. No exceptions. No "I pushed to brain" substitution.**
+
+## WHY THIS RULE EXISTS (failure post-mortem A4S4)
+- Session A4S4 completed all work but NEVER called `present_files` for either output
+- Zip existed at `/tmp/DCR-CMIS-CHECKPOINT-A4S4.zip` — never surfaced to user
+- Master context was updated in brain repo — never copied to `/mnt/user-data/outputs/`
+- Root cause: no hard checklist; brain push felt like "done" — it was not
+- User had to ask for files manually in next message — wasted session time
+
+## ENFORCEMENT RULES (Claude must follow)
+
+### RULE 1 — Build zip EARLY
+As soon as all file edits are done (before brain push), run:
+```bash
+cd /tmp && zip -r DCR-CMIS-CHECKPOINT-A[N]S[N].zip checkpoint/ -x "*.DS_Store"
+cp DCR-CMIS-CHECKPOINT-A[N]S[N].zip /mnt/user-data/outputs/
+```
+
+### RULE 2 — Update master context BEFORE brain push
+Patch Part 1 (phase, checkpoint, completed, next session) in master context.
+Copy to outputs: `cp /tmp/brain/DCR-CMIS-MASTER-CONTEXT-v4.md /mnt/user-data/outputs/`
+
+### RULE 3 — Call present_files BEFORE handoff text
+```
+present_files([
+  "/mnt/user-data/outputs/DCR-CMIS-CHECKPOINT-A[N]S[N].zip",
+  "/mnt/user-data/outputs/DCR-CMIS-MASTER-CONTEXT-v4.md"
+])
+```
+This call MUST happen. The session is not complete until present_files is called.
+
+### RULE 4 — Token budget awareness
+At ~60% context: finish current task, skip non-critical work, go straight to outputs.
+At ~70% context: STOP feature work. Package + present_files + push. Nothing else.
+
+### RULE 5 — Session end sequence (fixed order)
+1. Complete task / partial task
+2. `zip` checkpoint → copy to outputs
+3. Update master context → copy to outputs  
+4. `present_files` both ← **cannot be skipped**
+5. Brain push (PROJECT_BRAIN.md)
+6. Handoff text
+
+---
+
 # PART 1 — SESSION STATE (PROJECT BRAIN)
 
 ## Status: ACTIVE
