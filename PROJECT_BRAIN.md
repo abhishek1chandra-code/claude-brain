@@ -1,34 +1,36 @@
 # PROJECT BRAIN — DCR-CMIS
 ## Status: ACTIVE
-## Phase: OFFICER PORTAL — WIRING COMPLETE → ADMIN PORTAL NEXT
+## Phase: CONTROLROOM WIRED → PUBLIC INDEX BUILD FIXES NEXT
 ## Repo: abhishek1chandra-code/claude-brain
-## Last checkpoint: A4S4-FINAL (April 15, 2026)
+## Last checkpoint: A5S1 (April 15, 2026)
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 ## MASTER KIT: DCR-CMIS-MASTER-CONTEXT-v4.md (attach with every session)
 
 ---
 
-## NEXT SESSION — A5 S1
+## NEXT SESSION — A5 S2
 
-### ALL BUILD ERRORS & WARNINGS FIXED ✅
-### ALL P3 OFFICER PORTAL WIRING COMPLETE ✅
+### PRIORITY 1: Public/Index.cshtml.cs — Add missing [BindProperty] fields
+Add all these properties:
+- RegPassword, RegConfirmPassword, RegFatherName, RegBlock, RegPanchayat
+- RegVillage, RegAltMobile, RegPinCode, RegAadhaarNo, RegAddress
+- LocalBodiesJson, VillagesJson
 
-### PRIORITY 1: Admin Portal — ControlRoom wiring
-**Pages/ControlRoom/Index.cshtml.cs** — Replace mock data with real service calls:
-- Remove MockIvrsCalls list (lines ~106-138) — wire IIvrsService.GetRecentCallsAsync() or remove if service not ready
-- Wire real complaint stats via IAdminComplaintService.GetDashboardStatsAsync()
-- Wire today's complaints count (verify live data)
+### PRIORITY 2: Public/_Layout.cshtml — Fix Razor structural errors
+Errors: RZ1034 (malformed body tag), RZ1006 (missing } for else), RZ1010 (unexpected { after @), RZ1026 (unmatched tags), CS1513
+Root cause: inline @{} block inside <body> missing braces or premature @{ re-open
+Fix: audit full file — plain HTML <body>, all @if/@else with {}, no nested @{ inside code blocks
 
-### PRIORITY 2: Admin Portal — Complaint Detail page
-Verify all tabs wire real data:
-- Timeline tab → ComplaintHistory entities
-- Notes tab → ComplaintNotes entities
-- Officer assignment → AdminComplaintService.AssignOfficerAsync()
-
-### PRIORITY 3: Verify clean build
-- Confirm zero RZ/CS errors remain across all 5 fixed files
+### PRIORITY 3: Public/Index.cshtml — Fix RZ1008/RZ1005 syntax errors
+Lines 664–676: if/else without {} wrapping markup; bare : after @if/@else
+Fix: wrap all control-flow blocks containing HTML in proper @if (cond) { <html/> } else { <html/> }
 
 ---
+
+## COMPLETED (A5S1)
+- ControlRoom/Index.cshtml.cs — Removed MockIvrsCalls + IvrsCallRow record; added RecentIvrsCalls (List<IvrsCallLog>) via real EF Core query (_db.IvrsCallLogs.Include(c=>c.Complaint).OrderByDescending(c=>c.StartTime).Take(20).AsNoTracking())
+- ControlRoom/Index.cshtml — Switched foreach to Model.RecentIvrsCalls; updated field refs (CallerNumber, Complaint?.Category, StartTime.ToLocalTime(), Status); added empty-state fallback
+- CurrentPage alignment confirmed clean (no `new` keyword issue)
 
 ## COMPLETED (A4S4)
 ### Build Fixes (P1)
