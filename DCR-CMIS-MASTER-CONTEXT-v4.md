@@ -1,3 +1,5 @@
+> **⚠️ SUPREME RULE (overrides ALL other rules, no exceptions):** When any file needs editing — DELETE the file and write a complete new file from scratch. Never use str_replace or partial edits on any file.
+
 # DCR-CMIS MASTER CONTEXT — v4
 ## Single Upload. Full Context. Zero Tool Calls.
 
@@ -65,9 +67,9 @@ At ~70% context: STOP feature work. Package + present_files + push. Nothing else
 # PART 1 — SESSION STATE (PROJECT BRAIN)
 
 ## Status: ACTIVE
-## Phase: BUILD WARNINGS CLEAN → ADMIN PORTAL NEXT
+## Phase: INDEX REFACTOR COMPLETE → ADMIN PORTAL AUDIT NEXT
 ## Repo: abhishek1chandra-code/claude-brain
-## Last Checkpoint: A8S1 (April 15, 2026)
+## Last Checkpoint: A10S1 (April 15, 2026)
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 
 ---
@@ -141,84 +143,43 @@ DCR.CMIS.sln
 
 ---
 
-## ⚠️ TODO — NEXT SESSION: A9S1 — BLAZOR AUDIT (continued)
+## ✅ TODO — NEXT SESSION: A11S1 — Admin Portal Audit (Remaining Pages)
 
-### A8S1 COMPLETED (session ran but brain push was interrupted — files produced, zip packaged)
-- [x] **ZIP STRUCTURE FIX** — Root cause of `dotnet restore` failure: A7S1 zip had 4× nested `checkpoint/` dirs; deploy script only unwraps one. Fixed: A8S1 zip has exactly **one** `checkpoint/` wrapper → projects land directly in `src\` after unwrap.
-- [x] **Reports.razor** — Removed dead `AppDbContext Db` injection; `ExportCsv()` now navigates to `/api/reports/export-csv?from=...` with `forceLoad:true` (real browser download). Added `NavigationManager` injection.
-- [x] **AuditLog.razor.cs** — `ActionBadge()` → returns `badge-green` / `badge-amber` / `badge-red` / `badge-gray` (dcr-cmis.css tokens, not Bootstrap classes).
-- [x] **DepartmentList.razor** — `AuthenticationStateProvider` injected; hardcoded `userId=0` → real auth user ID; Excel import reads refreshed job from DB (`GetJobAsync`) instead of stale local object.
-- [x] **IExcelImportService + ExcelImportService** — Added `Task<ExcelImportJob?> GetJobAsync(int jobId)` to interface and implementation.
-- [x] **Track.cshtml.cs** — Verified fully real-wired: `IComplaintRepository.GetByComplaintNumberAsync`, `EscalationRequest.CitizenId` field name confirmed correct.
+### A10S1 COMPLETED
+- [x] **Public/Index.cshtml refactor — `@section Scripts` cleaned:**
+  - No `<style>` blocks existed in Index.cshtml (only inline `style=""` attributes on elements — correct, no migration needed)
+  - Extracted OTP countdown timer logic to `initOtpCountdown(total, resendLock)` in `public.js`
+  - Extracted login-mode post-error restore to `restoreLoginMode(btnId)` in `public.js`
+  - Inline `@section Scripts` reduced to 4 lines: 2 Razor data injections + 2 conditional function calls
+  - Removed 2 stale empty `{}` blocks from `public.js`
+  - SPA tab behavior verified: `setLoginMode` / `showRegister` / `showLogin` / `slideToStep` all correctly wired via `onclick` attrs — no issues
+- [x] **Blazor CSS sweep — CLEAN:** Zero `glass-theme.css` or `admin.css` references anywhere in codebase
 
-### NEXT: A9S1 — BLAZOR PAGE AUDIT (batch 2)
-**Audit these Blazor pages for mock/stub/hardcoded data (same pattern as A8S1):**
-1. `IvrsCallLog.razor` — verify real `IvrsCallLog` DB query, filter, pagination
-2. `EscalationRequests.razor` — verify real EF query, status update, CitizenId wiring
-3. `GisMap.razor` — verify real GPS data feed, no hardcoded coordinates
-4. `SystemConfig.razor` — verify real `SystemConfig` CRUD via ISystemConfigService or DB
-5. `OtpSettings.razor` — verify real OTP config read/write
+### A9S1 COMPLETED
+- [x] **Build errors verified ALREADY FIXED** — All previously logged errors (Index.cshtml missing props, _Layout.cshtml Razor errors, FieldController null ref, CS0109 warnings) were resolved in the A8S1 zip. No further action needed.
+- [x] **Blazor audit batch 2 — all 5 pages verified:**
+  - `IvrsCallLog.razor` ✅ real DB via `IIvrsService.GetRecentCallsAsync` + **FIXED: added caller/status/date filters + 20-per-page pagination** (was hardcoded 200, no filter)
+  - `EscalationRequests.razor` ✅ real EF query + **FIXED: `_loading=false` moved to `finally` block** + `_error` display added
+  - `GisMap.razor` ✅ real GPS data via `/api/gis/live-officers` — Jehanabad coords correct
+  - `SystemConfig.razor` ✅ full real CRUD via `ISystemConfigService`
+  - `OtpSettings.razor` ✅ full real CRUD via `ISystemConfigService`
 
-### BUILD ERRORS (still open — fix before A9S1 audit if zip restore fails)
-
-### ERRORS to fix (from latest build failure — DO NOT SKIP THESE)
-
-#### 1. Public/Index.cshtml — Razor Syntax Errors (lines 664-676)
-**Error:** `RZ1008` — Single-statement control-flow contains markup, needs `{}` braces
-**Error:** `RZ1005` — Colon `:` is not valid at start of code block
-- Line 667, 669: if/else without `{}` wrapping markup
-- Lines 670–676: bare `:` after `@if`/`@else` — invalid Razor syntax
-- **Fix:** Wrap all Razor control-flow blocks that contain HTML in proper `@if (cond) { <html/> } else { <html/> }` braces
-
-#### 2. Public/_Layout.cshtml — Multiple Razor Structural Errors (lines 15–61)
-**Error:** `RZ1034` — Malformed `<body>` tag helper
-**Error:** `RZ1006` — Missing closing `}` for else block (lines 17, 37)
-**Error:** `RZ1010` — Unexpected `{` after `@` at line 47
-**Error:** `RZ1026` — Unmatched `</body>` at line 60, `</html>` at line 61
-**Error:** `CS1513` — `}` expected (generated cs file line 454)
-- **Root cause:** Likely an inline `@{ }` block inside `<body>` that's missing braces or has a premature `@{` re-open
-- **Fix:** Audit entire `_Layout.cshtml` — ensure `<body>` is a plain HTML tag (not a tag helper), all `@if/@else` blocks have `{}`, no nested `@{` inside existing code blocks
-
-#### 3. Public/Index.cshtml — Missing Model Properties (CS1061)
-**Error:** `IndexModel` missing these properties:
-- `RegPassword` (line 367)
-- `RegConfirmPassword` (line 391)
-- `RegFatherName` (line 413)
-- `RegBlock` (line 472)
-- `RegPanchayat` (line 484)
-- `RegVillage` (line 499)
-- `RegAltMobile` (line 523)
-- `RegPinCode` (line 528)
-- `RegAadhaarNo` (line 538)
-- `RegAddress` (line 546)
-- `LocalBodiesJson` (line 664)
-- `VillagesJson` (line 665)
-- **Fix:** Add all missing `[BindProperty]` properties to `Public/Index.cshtml.cs` (PageModel class). These are citizen registration form fields + JSON data properties for cascading dropdowns.
-
-#### 4. DCR.CMIS.API/Controllers/FieldController.cs — Warning CS8604 (line 79)
-**Warning:** Possible null reference for `remarks` in `IComplaintRepository.UpdateStatusAsync`
-- **Fix:** Add null check or use null-coalescing: `remarks ?? string.Empty` before passing to `UpdateStatusAsync`
-
-#### 5. Officer/Index.cshtml.cs + ControlRoom/Index.cshtml.cs — Warning CS0109
-**Warning:** `CurrentPage` member uses `new` keyword unnecessarily (does not hide accessible member)
-- **Fix:** Remove the `new` keyword from `CurrentPage` property declaration in both files
-
-#### 6. Blazor Pages — Warning CS0168 ✅ FIXED (A6S1)
-**Files:** OfficerDashboard.razor.cs, LocalBodies.razor.cs, PoliceStations.razor.cs, RevenueVillages.razor.cs
-**Root cause:** `{{ex.Message}}` in `$""` strings = double-brace escape → literal text, ex unused
-**Fix applied:** Changed `{{ex.Message}}` → `{ex.Message}` (proper interpolation, ex now used)
-
-### AFTER BUILD IS FIXED — NEXT TASKS (in order):
-1. Public/Index.cshtml refactor:
-   - Audit for remaining inline `<style>` blocks → move to dcr-cmis.css
-   - Audit for inline `<script>` blocks → move to public.js
-   - Ensure `Layout = "_Layout"` is set (already confirmed)
-   - Verify SPA tab behavior (Login/Register/Track tabs) works correctly
-2. Review all Blazor pages for any remaining `glass-theme.css` / `admin.css` inline references
+### NEXT: A11S1 — Admin Portal Audit (Remaining Pages)
+Pages to audit (verify real-service-wired, no mock data):
+1. `IvrsConfig.razor` — verify `IIvrsConfigService.GetConfigAsync()` / `SaveConfigAsync()`
+2. `LocalBodies.razor` — verify real DB queries
+3. `PoliceStations.razor` — verify real DB queries
+4. `RevenueVillages.razor` — verify real DB queries
+5. `ShiftList.razor` / `ShiftCalendar.razor` — verify `IShiftService` calls
+6. `Manpower.razor` — verify `IDeputedPersonnelService` / `IWorkEventService`
+7. `GpsCheckInHistory.razor` — verify `IGpsService` calls
 
 ---
 
 ## DECISIONS LOG
+- **2026-04-15 A10S1:** Index.cshtml @section Scripts refactored. Extracted `initOtpCountdown(total, resendLock)` and `restoreLoginMode(btnId)` into public.js. Inline block now 4 lines (data-only). SPA tabs verified clean. Blazor CSS sweep: zero stale glass-theme.css/admin.css refs. Brain now updated from A7S1 → A10S1 (A8S1/A9S1 pushes were missed — state carried via zip + master context).
+- **2026-04-15 A9S1:** Blazor audit batch 2 complete. All 5 pages verified real-wired. Two fixes applied: (1) IvrsCallLog.razor — added caller/status/date filters + 20-per-page pagination (loads 500 records client-side via `GetRecentCallsAsync(500)`); (2) EscalationRequests.razor — `_loading=false` moved to `finally` block (was missing from catch, causing infinite spinner on DB error) + added `_error` string for user-facing error message. GisMap/SystemConfig/OtpSettings all clean.
+- **2026-04-15 A9S1:** All previously logged build errors confirmed ALREADY FIXED in A8S1 zip — removed from TODO.
 - **2026-04-15 A8S1:** ZIP packaging root cause diagnosed and fixed — nested `checkpoint/checkpoint/checkpoint/checkpoint/` structure caused `dotnet restore` failure since deploy script only unwraps one `checkpoint/` level. A8S1 zip uses single wrapper. Brain push was interrupted at session limit; master context updated manually.
 - **2026-04-15 A8S1:** Blazor audit batch 1 complete: Reports.razor (ExportCsv real API nav + dead injection removed), AuditLog.razor.cs (badge tokens fixed), DepartmentList.razor (real userId + stale count fix), GetJobAsync added to IExcelImportService. Track.cshtml.cs verified real-wired.
 - **2026-04-15:** Build failure logged as TODO for next session. Build errors are in Public/Index.cshtml (missing model properties + Razor syntax), Public/_Layout.cshtml (malformed Razor), API/FieldController.cs (nullable), and several Blazor pages (unused ex variable, new keyword warning).
@@ -998,5 +959,5 @@ cd /tmp/brain && git config user.email "claude@anthropic.com" && git config user
 
 ---
 
-*Document version: v4 — A8S1 Blazor audit batch 1 + ZIP packaging fix | Updated: April 15, 2026*
+*Document version: v4 — A10S1 Index.cshtml refactor + Blazor CSS sweep complete | Updated: April 15, 2026*
 *Replaces: DCR-CMIS-ARCHITECT-BLUEPRINT.md + PROJECT_BRAIN.md + SKILL.md (key rules) + session prompts*
