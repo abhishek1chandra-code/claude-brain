@@ -67,7 +67,7 @@ At ~70% context: STOP feature work. Package + present_files + push. Nothing else
 ## Status: ACTIVE
 ## Phase: BUILD WARNINGS CLEAN → ADMIN PORTAL NEXT
 ## Repo: abhishek1chandra-code/claude-brain
-## Last Checkpoint: A6S1 (April 15, 2026)
+## Last Checkpoint: A8S1 (April 15, 2026)
 ## Account Rotation: A1→A2→A3…A10→A1 (4hr cooldown each)
 
 ---
@@ -141,7 +141,25 @@ DCR.CMIS.sln
 
 ---
 
-## ⚠️ TODO — NEXT SESSION: BUILD FIX FIRST
+## ⚠️ TODO — NEXT SESSION: A9S1 — BLAZOR AUDIT (continued)
+
+### A8S1 COMPLETED (session ran but brain push was interrupted — files produced, zip packaged)
+- [x] **ZIP STRUCTURE FIX** — Root cause of `dotnet restore` failure: A7S1 zip had 4× nested `checkpoint/` dirs; deploy script only unwraps one. Fixed: A8S1 zip has exactly **one** `checkpoint/` wrapper → projects land directly in `src\` after unwrap.
+- [x] **Reports.razor** — Removed dead `AppDbContext Db` injection; `ExportCsv()` now navigates to `/api/reports/export-csv?from=...` with `forceLoad:true` (real browser download). Added `NavigationManager` injection.
+- [x] **AuditLog.razor.cs** — `ActionBadge()` → returns `badge-green` / `badge-amber` / `badge-red` / `badge-gray` (dcr-cmis.css tokens, not Bootstrap classes).
+- [x] **DepartmentList.razor** — `AuthenticationStateProvider` injected; hardcoded `userId=0` → real auth user ID; Excel import reads refreshed job from DB (`GetJobAsync`) instead of stale local object.
+- [x] **IExcelImportService + ExcelImportService** — Added `Task<ExcelImportJob?> GetJobAsync(int jobId)` to interface and implementation.
+- [x] **Track.cshtml.cs** — Verified fully real-wired: `IComplaintRepository.GetByComplaintNumberAsync`, `EscalationRequest.CitizenId` field name confirmed correct.
+
+### NEXT: A9S1 — BLAZOR PAGE AUDIT (batch 2)
+**Audit these Blazor pages for mock/stub/hardcoded data (same pattern as A8S1):**
+1. `IvrsCallLog.razor` — verify real `IvrsCallLog` DB query, filter, pagination
+2. `EscalationRequests.razor` — verify real EF query, status update, CitizenId wiring
+3. `GisMap.razor` — verify real GPS data feed, no hardcoded coordinates
+4. `SystemConfig.razor` — verify real `SystemConfig` CRUD via ISystemConfigService or DB
+5. `OtpSettings.razor` — verify real OTP config read/write
+
+### BUILD ERRORS (still open — fix before A9S1 audit if zip restore fails)
 
 ### ERRORS to fix (from latest build failure — DO NOT SKIP THESE)
 
@@ -201,6 +219,8 @@ DCR.CMIS.sln
 ---
 
 ## DECISIONS LOG
+- **2026-04-15 A8S1:** ZIP packaging root cause diagnosed and fixed — nested `checkpoint/checkpoint/checkpoint/checkpoint/` structure caused `dotnet restore` failure since deploy script only unwraps one `checkpoint/` level. A8S1 zip uses single wrapper. Brain push was interrupted at session limit; master context updated manually.
+- **2026-04-15 A8S1:** Blazor audit batch 1 complete: Reports.razor (ExportCsv real API nav + dead injection removed), AuditLog.razor.cs (badge tokens fixed), DepartmentList.razor (real userId + stale count fix), GetJobAsync added to IExcelImportService. Track.cshtml.cs verified real-wired.
 - **2026-04-15:** Build failure logged as TODO for next session. Build errors are in Public/Index.cshtml (missing model properties + Razor syntax), Public/_Layout.cshtml (malformed Razor), API/FieldController.cs (nullable), and several Blazor pages (unused ex variable, new keyword warning).
 - **2026-04-14 A2 S2:** CSS Migration COMPLETE. All Blazor layouts now use dcr-cmis.css. MagistrateLayout: removed C# theme state, now uses data-theme-toggle (JS-driven). NavMenu.razor.css + MainLayout.razor.css kept as Blazor scoped CSS (they use CSS vars, no migration needed).
 - **2026-04-14 A2 S2:** Rotation kit dcr-cmis.css synced from project (1513 lines = project master).
@@ -978,5 +998,5 @@ cd /tmp/brain && git config user.email "claude@anthropic.com" && git config user
 
 ---
 
-*Document version: v4 — A4S4-FINAL + Officer-Wiring-Complete | Updated: April 15, 2026*
+*Document version: v4 — A8S1 Blazor audit batch 1 + ZIP packaging fix | Updated: April 15, 2026*
 *Replaces: DCR-CMIS-ARCHITECT-BLUEPRINT.md + PROJECT_BRAIN.md + SKILL.md (key rules) + session prompts*
